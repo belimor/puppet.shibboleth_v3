@@ -1,0 +1,32 @@
+{
+  "name": "belimor-shibboleth_v3",
+  "version": "0.1.0",
+  "author": "Dmitry Vaghin",
+  "summary": "Shibboleth V3 installation and configuration module",
+  "license": "Apache 2.0",
+  "source": "https://github.com/belimor/puppet.shibboleth_v3",
+  "project_page": "https://github.com/belimor/puppet.shibboleth_v3",
+  "issues_url": "https://github.com/belimor/puppet.shibboleth_v3/issues",
+  "dependencies": [
+    {"name":"puppetlabs-stdlib","version_requirement":">= 1.0.0"}
+  ]
+  "dependencies": [
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 4.1.0"
+    },
+    {
+      "name": "puppetlabs/java",
+      "version_requirement": ">= 1.0.1"
+    },
+    {
+      "name": "pdxcat/singleton",
+      "version_requirement": ">= 0.0.5"
+    }
+    {
+      "name": "gsick/jetty",
+      "version_requirement": ">=0.0.8"
+    }
+  ],
+}
+
