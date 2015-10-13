@@ -1,10 +1,10 @@
 # == Class: shibboleth_v3
 #
-# Full description of class shibboleth_v3 here.
+# This class to install and configure Shibboleth V3 server
 #
 # === Parameters
 #
-# Document parameters here.
+# $version:: The version of Shibboleth to download (for V3 versions only).
 #
 # [*sample_parameter*]
 #   Explanation of what this parameter affects and what it defaults to.
@@ -21,21 +21,46 @@
 #   global variables should be avoided in favor of class parameters as
 #   of Puppet 2.6.)
 #
+# == Requires:
+#
+# Java
+# Jetty
+#
 # === Examples
 #
-#  class { 'shibboleth_v3':
-#    servers => [ 'pool.ntp.org', 'ntp.local.company.com' ],
-#  }
+#   class {'shibboleth_v3':
+#     version => '3.1.2',
+#   }
 #
 # === Authors
 #
-# Author Name <author@domain.com>
+# Dmitry Vaghin <dmitry.vaghin@cybera.ca>
 #
 # === Copyright
 #
-# Copyright 2015 Your name here, unless otherwise noted.
+# Copyright 2015 Dmitry Vaghin, unless otherwise noted.
 #
-class shibboleth_v3 {
+class shibboleth_v3 (
+  $version                = hiera('shibboleth::version'),
+  $tmp                    = hiera('shibboleth::tmp', '/tmp'),
+) {
+  
 
+  exec { 'download shibboleth':
+    cwd     => $tmp,
+    path    => '/bin:/usr/bin',
+    command => "wget http://shibboleth.net/downloads/identity-provider/${version}/shibboleth-identity-provider-${version}.zip",
+    creates => "${tmp}/shibboleth-identity-provider-${version}.zip",
+    notify  => Exec['unzip shibboleth'],
+    require => Package['wget'],
+  }
+
+  exec { 'unzip shibboleth':
+    cwd     => $tmp,
+    path    => '/bin:/usr/bin',
+    command => "unzip shibboleth-identity-provider-${version}.zip -d /opt",
+    creates => "/opt/shibboleth-identity-provider-${version}.zip",
+    require => Package['unzip'],
+  }
 
 }
