@@ -56,48 +56,57 @@ class shibboleth_v3 (
   
 ## Downloading and extracting Shibboleth files
   file { '/opt/install':
-    ensure => folder,
+    ensure => directory,
   }
 
   exec { 'download shibboleth':
-    cwd     => $tmp,
+    logoutput => true,
+    cwd     => "/opt/install",
     path    => '/bin:/usr/bin',
+    unless  => "test -f /opt/install/shibboleth-identity-provider-${version}.tar.gz",
     command => "wget http://shibboleth.net/downloads/identity-provider/${version}/shibboleth-identity-provider-${version}.tar.gz",
-    creates => "${tmp}/shibboleth-identity-provider-${version}.zip",
+    creates => "/opt/install/shibboleth-identity-provider-${version}.tar.gz",
     notify  => Exec['extract shibboleth'],
-    require => Package['wget'],
+    require => [ Package['wget'], File['/opt/install'], ]
   }
 
   exec { 'extract shibboleth':
-    cwd     => $tmp,
+    logoutput => true,
+    cwd     => "/opt/install",
     path    => '/bin:/usr/bin',
-    command => "/bin/tar -zxvf ${tmp}/shibboleth-identity-provider-${version}.tar.gz -C /opt/install",
+    unless  => "test -f /opt/install/shibboleth-identity-provider-${version}/bin/install.sh",
+    command => "/bin/tar -zxvf /opt/install/shibboleth-identity-provider-${version}.tar.gz -C /opt/install",
     creates => "/opt/install/shibboleth-identity-provider-${version}.zip",
     require => File['/opt/install'],
   }
 
 ## Java Cryptography Extension Inlimited Strengh files
-  if ($jce_unlimited_strength) {
+  if ( $jce_unlimited_strength ) {
     file { 'local_policy':
       ensure => file,
-      path   => "/usr/lib/jvm/oracle_jdk8/jre/lib/security/",
-      source => "puppet:///modules/puppet.shibboleth_v3/UnlimitedJCEPolicyJDK8/local_policy.jar",
+      path   => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/local_policy.jar",
+      source => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/local_policy.jar",
+      mode   => '0644',
     }
 
     file { 'US_export_policy':
       ensure => file,
-      path   => "/usr/lib/jvm/oracle_jdk8/jre/lib/security/",
-      source => "puppet:///modules/puppet.shibboleth_v3/UnlimitedJCEPolicyJDK8/US_export_policy.jar",
+      path   => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/US_export_policy.jar",
+      source => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/US_export_policy.jar",
+      mode   => '0644',
     }
   }
 
 ## Build shibboleth war file
-  exec { '':
-    cwd     => "/opt/install",
-    command => "/opt/install/shibboleth-identity-provider-${version}/bin/install.sh -Didp.src.dir=/opt/install/shibboleth-identity-provider-${version} -Didp.target.dir=/opt/shibboleth-idp -Didp.keystore.password=${key_store_pwd} -Didp.sealer.password=${sealer_pwd} -Didp.host.name=${host_name} -Didp.scope=${scope} -Dentityid=https://${host_name}/idp/shibboleth",
-    require => Exec['extract shibboleth'],
+  exec { 'shibboleth install':
+    cwd         => "/opt/install",
+    path        => '/bin:/usr/bin',
+    logoutput   => true,
+    unless      => "test -f /opt/shibboleth-idp/war/idp.war",
+    environment => [ "JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64" ],
+    command     => "/opt/install/shibboleth-identity-provider-${version}/bin/install.sh -Didp.src.dir=/opt/install/shibboleth-identity-provider-${version} -Didp.target.dir=/opt/shibboleth-idp -Didp.keystore.password=${key_store_pwd} -Didp.sealer.password=${sealer_pwd} -Didp.host.name=${host_name} -Didp.scope=${scope} -Dentityid=https://${host_name}/idp/shibboleth",
+    require     => Exec['extract shibboleth'],
   }
-
 
 
 
