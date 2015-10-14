@@ -41,27 +41,39 @@
 # Copyright 2015 Dmitry Vaghin, unless otherwise noted.
 #
 class shibboleth_v3 (
-  $version                = hiera('shibboleth::version'),
+  $version                = hiera('shibboleth::version', '3.1.2'),
   $tmp                    = hiera('shibboleth::tmp', '/tmp'),
-  $jce_unlimited_strength = hiera('shibboleth::jce_unlimited_strength ', true),
+  $jce_unlimited_strength = hiera('shibboleth::jce_unlimited_strength', true),
+  $key_store_pwd          = hiera('shibboleth::key_store_pwd', 'password-123'),
+  $sealer_pwd             = hiera('shibboleth::sealer_pwd', 'password-123'),
+  $host_name              = hiera('shibboleth::hostname', $::fqdn),
+  $scope                  = hiera('shibboleth::scope', 'localscope'),
 ) {
+
+  contain jetty
+
+  singleton_packages('wget')
   
 ## Downloading and extracting Shibboleth files
+  file { '/opt/install':
+    ensure => folder,
+  }
+
   exec { 'download shibboleth':
     cwd     => $tmp,
     path    => '/bin:/usr/bin',
-    command => "wget http://shibboleth.net/downloads/identity-provider/${version}/shibboleth-identity-provider-${version}.zip",
+    command => "wget http://shibboleth.net/downloads/identity-provider/${version}/shibboleth-identity-provider-${version}.tar.gz",
     creates => "${tmp}/shibboleth-identity-provider-${version}.zip",
-    notify  => Exec['unzip shibboleth'],
+    notify  => Exec['extract shibboleth'],
     require => Package['wget'],
   }
 
-  exec { 'unzip shibboleth':
+  exec { 'extract shibboleth':
     cwd     => $tmp,
     path    => '/bin:/usr/bin',
-    command => "unzip shibboleth-identity-provider-${version}.zip -d /opt",
-    creates => "/opt/shibboleth-identity-provider-${version}.zip",
-    require => Package['unzip'],
+    command => "/bin/tar -zxvf ${tmp}/shibboleth-identity-provider-${version}.tar.gz -C /opt/install",
+    creates => "/opt/install/shibboleth-identity-provider-${version}.zip",
+    require => File['/opt/install'],
   }
 
 ## Java Cryptography Extension Inlimited Strengh files
@@ -79,14 +91,12 @@ class shibboleth_v3 (
     }
   }
 
-
-
-
-
-
-
-
-
+## Build shibboleth war file
+  exec { '':
+    cwd     => "/opt/install",
+    command => "/opt/install/shibboleth-identity-provider-${version}/bin/install.sh -Didp.src.dir=/opt/install/shibboleth-identity-provider-${version} -Didp.target.dir=/opt/shibboleth-idp -Didp.keystore.password=${key_store_pwd} -Didp.sealer.password=${sealer_pwd} -Didp.host.name=${host_name} -Didp.scope=${scope} -Dentityid=https://${host_name}/idp/shibboleth",
+    require => Exec['extract shibboleth'],
+  }
 
 
 
