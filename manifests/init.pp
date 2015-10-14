@@ -43,9 +43,10 @@
 class shibboleth_v3 (
   $version                = hiera('shibboleth::version'),
   $tmp                    = hiera('shibboleth::tmp', '/tmp'),
+  $jce_unlimited_strength = hiera('shibboleth::jce_unlimited_strength ', true),
 ) {
   
-
+## Downloading and extracting Shibboleth files
   exec { 'download shibboleth':
     cwd     => $tmp,
     path    => '/bin:/usr/bin',
@@ -62,5 +63,32 @@ class shibboleth_v3 (
     creates => "/opt/shibboleth-identity-provider-${version}.zip",
     require => Package['unzip'],
   }
+
+## Java Cryptography Extension Inlimited Strengh files
+  if ($jce_unlimited_strength) {
+    file { 'local_policy':
+      ensure => file,
+      path   => "/usr/lib/jvm/oracle_jdk8/jre/lib/security/",
+      source => "puppet:///modules/puppet.shibboleth_v3/UnlimitedJCEPolicyJDK8/local_policy.jar",
+    }
+
+    file { 'US_export_policy':
+      ensure => file,
+      path   => "/usr/lib/jvm/oracle_jdk8/jre/lib/security/",
+      source => "puppet:///modules/puppet.shibboleth_v3/UnlimitedJCEPolicyJDK8/US_export_policy.jar",
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
