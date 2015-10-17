@@ -83,17 +83,19 @@ class shibboleth_v3 (
 ## Java Cryptography Extension Inlimited Strengh files
   if ( $jce_unlimited_strength ) {
     file { 'local_policy':
-      ensure => file,
-      path   => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/local_policy.jar",
-      source => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/local_policy.jar",
-      mode   => '0644',
+      ensure  => file,
+      path    => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/local_policy.jar",
+      source  => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/local_policy.jar",
+      mode    => '0644',
+      require => Class['jetty'],
     }
 
     file { 'US_export_policy':
-      ensure => file,
-      path   => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/US_export_policy.jar",
-      source => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/US_export_policy.jar",
-      mode   => '0644',
+      ensure  => file,
+      path    => "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/US_export_policy.jar",
+      source  => "puppet:///modules/shibboleth_v3/UnlimitedJCEPolicyJDK8/US_export_policy.jar",
+      mode    => '0644',
+      require => Class['jetty'],
     }
   }
 
@@ -104,7 +106,7 @@ class shibboleth_v3 (
     logoutput   => true,
     unless      => "test -f /opt/shibboleth-idp/war/idp.war",
     environment => [ "JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64" ],
-    command     => "/opt/install/shibboleth-identity-provider-${version}/bin/install.sh -Didp.src.dir=/opt/install/shibboleth-identity-provider-${version} -Didp.target.dir=/opt/shibboleth-idp -Didp.keystore.password=${key_store_pwd} -Didp.sealer.password=${sealer_pwd} -Didp.host.name=${host_name} -Didp.scope=${scope} -Dentityid=https://${host_name}/idp/shibboleth",
+    command     => "/opt/install/shibboleth-identity-provider-${version}/bin/install.sh -Didp.src.dir=/opt/install/shibboleth-identity-provider-${version} -Didp.target.dir=/opt/shibboleth-idp -Didp.keystore.password=${key_store_pwd} -Didp.sealer.password=${sealer_pwd} -Didp.host.name=${host_name} -Didp.scope=${scope} -Dentityid=https://${host_name}/idp/shibboleth > /opt/install/inst_shibb.log 2>&1",
     require     => Exec['extract shibboleth'],
   }
 
